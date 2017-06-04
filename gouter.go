@@ -35,11 +35,7 @@ func (g *gouter) GetRouter() *http.ServeMux {
 
 func (g *gouter) AddRoute(name, route, method string, handler http.HandlerFunc) *gouter {
 	// TODO: store same route & different method pattern
-	g.router.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
-		if strings.EqualFold(r.Method, method) {
-			glog.HTTPLogger(name, handler)
-		}
-	})
+	g.router.Handle(route, routing(method, glog.HTTPLogger(name, handler)))
 	return g
 }
 
@@ -48,4 +44,12 @@ func (g *gouter) SetRouter(Routes) *gouter {
 		g = g.AddRoute(route.Name, route.Pattern, route.Method, route.HandlerFunc)
 	}
 	return g
+}
+
+func routing(method string, handler http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.EqualFold(r.Method, method) {
+			handler.ServeHTTP(w, r)
+		}
+	})
 }
